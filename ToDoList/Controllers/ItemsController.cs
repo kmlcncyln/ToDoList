@@ -1,7 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
 using ToDoList.Data;
 using ToDoList.Models;
 
@@ -12,27 +18,48 @@ namespace ToDoList.Controllers
     public class ItemsController : ControllerBase
     {
         private readonly ToDoListDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public ItemsController(ToDoListDbContext context)
+        public ItemsController(ToDoListDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
+        }
+
+        // JWT Token Oluşturma
+        private string GenerateJwtToken(string userId, string role)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Name, userId),
+                    new Claim(ClaimTypes.Role, role),
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         [HttpPost]
-        public IActionResult CreateItem(Item item)
+        public async Task<IActionResult> CreateItem(Item item)
         {
             // Yeni bir görev ekleyin ve başarı durumunu döndürün.
             _context.Items.Add(item);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetItemById), new { id = item.Id }, item);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetItemById(int id)
+        public async Task<IActionResult> GetItemById(int id)
         {
             // Belirli bir görevi ID'ye göre getirin ve döndürün.
-            var item = _context.Items.Find(id);
+            var item = await _context.Items.FindAsync(id);
             if (item == null)
             {
                 return NotFound("Görev bulunamadı.");
@@ -41,10 +68,10 @@ namespace ToDoList.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateItem(int id, Item item)
+        public async Task<IActionResult> UpdateItem(int id, Item item)
         {
             // Belirli bir görevi güncelleyin ve başarı durumunu döndürün.
-            var existingItem = _context.Items.Find(id);
+            var existingItem = await _context.Items.FindAsync(id);
             if (existingItem == null)
             {
                 return NotFound("Görev bulunamadı.");
@@ -56,23 +83,23 @@ namespace ToDoList.Controllers
             existingItem.Status = item.Status;
             existingItem.Category = item.Category;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok(existingItem);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteItem(int id)
+        public async Task<IActionResult> DeleteItem(int id)
         {
             // Belirli bir görevi silin ve başarı durumunu döndürün.
-            var item = _context.Items.Find(id);
+            var item = await _context.Items.FindAsync(id);
             if (item == null)
             {
                 return NotFound("Görev bulunamadı.");
             }
 
             _context.Items.Remove(item);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok("Görev başarıyla silindi.");
         }

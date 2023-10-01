@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "TIog9U1eajE3/ryKsBoKahTPtuRVNrp6Yt01pE6dL9QVs8CK9QQUok76gCJutCrwDP5vGMkZWGc7Djre9MO/sw==",
+  "dgSpecHash": "pHDONCwxjlB9OutL/BfKp08X+8wdhUu9Q6M7I9riJXayvkpIotNcG4S6zWtVC3LJNVAkOS8VATSRIyF55PLelg==",
   "success": true,
   "projectFilePath": "C:\\Users\\Kemalcan CEYLAN\\Desktop\\C#\\ToDoList\\ToDoList\\ToDoList.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\azure.core\\1.25.0\\azure.core.1.25.0.nupkg.sha512",
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\azure.identity\\1.7.0\\azure.identity.1.7.0.nupkg.sha512",
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\7.0.11\\microsoft.aspnetcore.authentication.jwtbearer.7.0.11.nupkg.sha512",
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\microsoft.aspnetcore.openapi\\7.0.4\\microsoft.aspnetcore.openapi.7.0.4.nupkg.sha512",
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
     "C:\\Users\\Kemalcan CEYLAN\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512",
