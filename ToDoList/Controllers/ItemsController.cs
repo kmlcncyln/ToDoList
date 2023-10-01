@@ -52,7 +52,7 @@ namespace ToDoList.Controllers
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetItemById), new { id = item.Id }, item);
+            return CreatedAtAction(nameof(GetItemById), new { id = item.TaskID }, item);
         }
 
         [HttpGet("{id}")]

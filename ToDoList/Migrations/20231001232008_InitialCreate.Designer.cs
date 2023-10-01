@@ -12,7 +12,7 @@ using ToDoList.Data;
 namespace ToDoList.Migrations
 {
     [DbContext(typeof(ToDoListDbContext))]
-    [Migration("20230925232127_InitialCreate")]
+    [Migration("20231001232008_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -27,8 +27,9 @@ namespace ToDoList.Migrations
 
             modelBuilder.Entity("ToDoList.Models.Item", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("TaskID")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("Category")
                         .HasColumnType("int");
@@ -39,7 +40,8 @@ namespace ToDoList.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
@@ -49,9 +51,10 @@ namespace ToDoList.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TaskID");
 
                     b.ToTable("Items");
                 });
@@ -64,7 +67,7 @@ namespace ToDoList.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");

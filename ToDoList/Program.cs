@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ToDoList.Data;
+using Microsoft.OpenApi.Models;
 
 namespace ToDoList
 {
@@ -44,7 +45,10 @@ namespace ToDoList
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ToDoList", Version = "v1" });
+            });
 
             var app = builder.Build();
 
@@ -52,7 +56,10 @@ namespace ToDoList
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ToDoList v1");
+                });
             }
 
             app.UseHttpsRedirection();
