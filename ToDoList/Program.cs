@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using ToDoList.Identity;
 
 namespace ToDoList
 {
@@ -55,7 +57,13 @@ namespace ToDoList
                 };
             });
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminPolicy", p => p.RequireClaim(IdentityData.AdminUserClaimName, "true"));
+                options.AddPolicy("UserPolicy", p => p.RequireClaim(IdentityData.AdminUserClaimName, "false"));
+
+
+            });
 
             builder.Services.AddControllers();
 

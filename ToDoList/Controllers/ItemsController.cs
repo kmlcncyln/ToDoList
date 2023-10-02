@@ -11,7 +11,7 @@ using ToDoList.Models;
 
 namespace ToDoList.Controllers
 {
-    [Authorize]
+
     [ApiController]
     [Route("api/items")]
     public class ItemsController : ControllerBase
@@ -43,12 +43,17 @@ namespace ToDoList.Controllers
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
-
+        
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateItem(Item item)
         {
             // TaskID'yi otomatik olarak oluştur
             item.TaskID = GenerateUniqueTaskID();
+
+            var userId = User.FindFirst(ClaimTypes.Name)?.Value;
+
+            item.CreatedBy = userId;
 
             // Yeni bir görev ekleyin ve döndür
             _context.Items.Add(item);
@@ -75,7 +80,7 @@ namespace ToDoList.Controllers
 
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
             public async Task<IActionResult> GetItemById(string id)
         {
             var item = _context.Items.FirstOrDefault(i => i.TaskID == id);
@@ -103,78 +108,72 @@ namespace ToDoList.Controllers
         }
 
 
+        [Authorize]
         [HttpPut("{id}")]
-            //[Authorize]
-            public async Task<IActionResult> UpdateItem(string id, Item item)
+        public async Task<IActionResult> UpdateItem(string id, Item item)
         {
-            // Belirli bir görevi güncelleme işlemine başlayın.
+            // Görevi veritabanından alın
             var existingItem = _context.Items.FirstOrDefault(i => i.TaskID == id);
             if (existingItem == null)
             {
                 return NotFound("Görev bulunamadı.");
             }
 
-            // Kullanıcıya özgü yetkilendirme
             var userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            // UserController tarafından üretilen token ile kimlik doğrulaması yapılabilir
-            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            // Token'ın doğru olup olmadığını kontrol edin
-            if (ValidateToken(token, userId, userRole))
+            // Eğer kullanıcı normal bir kullanıcı ise ve görev kendisine ait değilse işlemi reddet
+            if (!IsAdmin() && existingItem.CreatedBy != userId)
             {
-                // taskID'yi güncelleme işlemi sırasında dikkate almayın
-                item.TaskID = existingItem.TaskID;
-
-                existingItem.Title = item.Title;
-                existingItem.Description = item.Description;
-                existingItem.DueDate = item.DueDate;
-                existingItem.Status = item.Status;
-                existingItem.Category = item.Category;
-
-                await _context.SaveChangesAsync();
-
-                return Ok(existingItem);
+                return Forbid();
             }
-            else
-            {
-                return Forbid(); // Yetkilendirme reddedildi
-            }
+
+            // Güncelleme işlemi
+            existingItem.Title = item.Title;
+            existingItem.Description = item.Description;
+            existingItem.DueDate = item.DueDate;
+            existingItem.Status = item.Status;
+            existingItem.Category = item.Category;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(existingItem);
         }
 
+        
+
+
+        [Authorize]
         [HttpDelete("{id}")]
-            //[Authorize]
-            public async Task<IActionResult> DeleteItem(string id)
+        public async Task<IActionResult> DeleteItem(string id)
         {
-            // Belirli bir görevi silin ve başarı durumunu döndürün.
+            // Görevi veritabanından alın
             var item = _context.Items.FirstOrDefault(i => i.TaskID == id);
             if (item == null)
             {
                 return NotFound("Görev bulunamadı.");
             }
 
-            // Kullanıcıya özgü yetkilendirme
             var userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            // UserController tarafından üretilen token ile kimlik doğrulaması yapılabilir
-            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            // Token'ın doğru olup olmadığını kontrol edin
-            if (ValidateToken(token, userId, userRole))
+            // Eğer kullanıcı normal bir kullanıcı ise ve görev kendisine ait değilse işlemi reddet
+            if (!IsAdmin() && item.CreatedBy != userId)
             {
-                _context.Items.Remove(item);
-                await _context.SaveChangesAsync();
+                return Forbid();
+            }
 
-                return Ok("Görev başarıyla silindi.");
-            }
-            else
-            {
-                return Forbid(); // Yetkilendirme reddedildi
-            }
+            // Görevi silme işlemi
+            _context.Items.Remove(item);
+            await _context.SaveChangesAsync();
+
+            return Ok("Görev başarıyla silindi.");
         }
 
+
+        // Kullanıcının admin olup olmadığını kontrol eden yardımcı fonksiyon
+        private bool IsAdmin()
+        {
+            return User.IsInRole("Admin");
+        }
 
         private bool ValidateToken(string token, string userId, string userRole)
         {
