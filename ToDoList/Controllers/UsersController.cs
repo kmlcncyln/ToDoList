@@ -102,7 +102,7 @@ namespace ToDoList.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1), // Token süresini ayarlayabilirsiniz
+                expires: DateTime.UtcNow.AddDays(7), // Token süresi
                 signingCredentials: credentials
             );
 
