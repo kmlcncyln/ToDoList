@@ -7,6 +7,8 @@ using System.Text;
 using ToDoList.Data;
 using Microsoft.OpenApi.Models;
 
+using ToDoList.Models;
+
 namespace ToDoList
 {
     public class Program
@@ -63,7 +65,7 @@ namespace ToDoList
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
