@@ -43,12 +43,30 @@ public class ItemsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateItem(Item item)
     {
-        // Yeni bir görev ekleyin ve başarı durumunu döndürün.
+        // TaskID'yi otomatik olarak oluştur
+        item.TaskID = GenerateUniqueTaskID();
+
+        // Yeni bir görev ekleyin ve döndür
         _context.Items.Add(item);
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetItemById), new { id = item.TaskID }, item);
     }
+
+    private string GenerateUniqueTaskID()
+    {
+        string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        char[] id = new char[10];
+
+        for (int i = 0; i < 10; i++)
+        {
+            id[i] = chars[random.Next(chars.Length)];
+        }
+
+        return new string(id);
+    }
+
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetItemById(string id)
@@ -59,7 +77,7 @@ public class ItemsController : ControllerBase
             return NotFound("Görev bulunamadı.");
         }
 
-        // Geçici olarak token doğrulamasını devre dışı bırakmak için true döndürün
+        // Geçici olarak token doğrulamasını devre dışı bırakmak için true döndür
         bool tokenValidationDisabled = true;
 
         if (!tokenValidationDisabled)
@@ -95,7 +113,7 @@ public class ItemsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(string id, Item item)
     {
-        // Belirli bir görevi güncelleyin ve başarı durumunu döndürün.
+        // Belirli bir görevi güncelleme işlemine başlayın.
         var existingItem = _context.Items.FirstOrDefault(i => i.TaskID == id);
         if (existingItem == null)
         {
@@ -113,7 +131,9 @@ public class ItemsController : ControllerBase
 
             if (userRole == UserRole.Admin.ToString() || (userId == existingItem.CreatedBy))
             {
-                // Öğenin alanlarını güncelleyin
+                // taskID'yi güncelleme işlemi sırasında dikkate almayın
+                item.TaskID = existingItem.TaskID;
+
                 existingItem.Title = item.Title;
                 existingItem.Description = item.Description;
                 existingItem.DueDate = item.DueDate;
@@ -131,7 +151,9 @@ public class ItemsController : ControllerBase
         }
         else
         {
-            // Geçici olarak token doğrulamasını devre dışı bıraktığınızda, doğrudan veriyi güncelleyebilirsiniz.
+            // Geçici olarak token doğrulamasını devre dışı 
+            item.TaskID = existingItem.TaskID;
+
             // Öğenin alanlarını güncelleyin
             existingItem.Title = item.Title;
             existingItem.Description = item.Description;
@@ -144,6 +166,7 @@ public class ItemsController : ControllerBase
             return Ok(existingItem);
         }
     }
+
 
 
     [HttpDelete("{id}")]
