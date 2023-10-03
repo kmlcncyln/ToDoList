@@ -18,7 +18,6 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
-using ToDoList.Identity;
 
 namespace ToDoList
 {
@@ -55,14 +54,6 @@ namespace ToDoList
                     IssuerSigningKey = new SymmetricSecurityKey
                     (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
                 };
-            });
-
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("AdminPolicy", p => p.RequireClaim(IdentityData.AdminUserClaimName, "true"));
-                options.AddPolicy("UserPolicy", p => p.RequireClaim(IdentityData.AdminUserClaimName, "false"));
-
-
             });
 
             builder.Services.AddControllers();
