@@ -1,16 +1,22 @@
-﻿namespace ToDoList.Models
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace ToDoList.Models
 {
     public class Item
     {
-        public string Id { get; set; }
+        [Key]
+        [MaxLength(10)]
+        public string TaskID { get; set; }
+
+        [MaxLength(255)]
         public string Title { get; set; }
+        [MaxLength(1000)]
         public string Description { get; set; }
         public DateTime DueDate { get; set; }
         public TaskStatus Status { get; set; }
         public TaskCategory Category { get; set; }
         public string CreatedBy { get; set; }
-
-
     }
 
     public enum TaskStatus
@@ -27,5 +33,4 @@
         School,
         Entertainment
     }
-
 }

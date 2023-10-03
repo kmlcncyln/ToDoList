@@ -1,85 +1,112 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Linq;
 using ToDoList.Data;
 using ToDoList.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace ToDoList.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
+        private readonly IConfiguration _configuration;
         private readonly ToDoListDbContext _context;
 
-        public UsersController(ToDoListDbContext context)
+        public UserController(IConfiguration configuration, ToDoListDbContext context)
         {
+            _configuration = configuration;
             _context = context;
         }
 
-        [HttpPost]
-        public IActionResult CreateUser(User user)
+        [HttpPost("register")]
+        public IActionResult Register(User userRegistration)
         {
-            
-            _context.Users.Add(user);
-            _context.SaveChanges();
-
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult GetUserById(int id)
-        {
-            
-            var user = _context.Users.Find(id);
-            if (user == null)
+            // Kullanıcı adının benzersiz olduğunu kontrol edin
+            var existingUser = _context.Users.FirstOrDefault(u => u.Username == userRegistration.Username);
+            if (existingUser != null)
             {
-                return NotFound("Kullanıcı bulunamadı.");
-            }
-            return Ok(user);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, User user)
-        {
-            
-            var existingUser = _context.Users.Find(id);
-            if (existingUser == null)
-            {
-                return NotFound("Kullanıcı bulunamadı.");
+                return BadRequest(new { Message = "Bu kullanıcı adı zaten kullanılıyor." });
             }
 
-            existingUser.Username = user.Username;
-            existingUser.Password = user.Password; 
+            // Parolayı güvenli bir şekilde tuzlama ve karma işlemi uygula
+            string hashedPassword = HashPassword(userRegistration.Password);
 
+            // Yeni bir User nesnesi oluştur ve veritabanına eklemek için DbContext kullan
+            var newUser = new User
+            {
+                Username = userRegistration.Username,
+                Password = hashedPassword,
+                Role = UserRole.User // Kullanıcı rolünü ayarlayın
+            };
+
+            // Veritabanına kullanıcıyı ekleyin
+            _context.Users.Add(newUser);
             _context.SaveChanges();
 
-            return Ok(existingUser);
+            // Kullanıcıyı kaydettikten sonra JWT token oluşturabilirsiniz
+            var token = GenerateJwtToken(newUser.Username, newUser.Role.ToString());
+
+            return Ok(new { Token = token });
         }
 
-        [HttpDelete("{id}")]
-        public IActionResult DeleteUser(int id)
+        [HttpPost("login")]
+        public IActionResult Login(User userLogin)
         {
-            
-            var user = _context.Users.Find(id);
-            if (user == null)
+            // Kullanıcının kimlik doğrulama işlemi
+            // Kullanıcı adı ve parola doğrulamasını gerçekleştirin
+            // Eğer kullanıcı adı ve parola eşleşmezse hata mesajı döndürün
+
+            var existingUser = _context.Users.FirstOrDefault(u => u.Username == userLogin.Username);
+            if (existingUser == null || !VerifyPassword(existingUser.Password, userLogin.Password))
             {
-                return NotFound("Kullanıcı bulunamadı.");
+                return Unauthorized(new { Message = "Kullanıcı adı veya parola hatalı." });
             }
 
-            _context.Users.Remove(user);
-            _context.SaveChanges();
-
-            return Ok("Kullanıcı başarıyla silindi.");
+            var token = GenerateJwtToken(existingUser.Username, existingUser.Role.ToString());
+            return Ok(new { Token = token });
         }
 
-        [HttpGet]
-        public IActionResult GetAllUsers()
+        private string HashPassword(string password)
         {
-            
-            var users = _context.Users.ToList();
-            return Ok(users);
+            var passwordHasher = new PasswordHasher<User>(); 
+            string hashedPassword = passwordHasher.HashPassword(null, password);
+            return hashedPassword;
+        }
+
+        private bool VerifyPassword(string hashedPassword, string providedPassword)
+        {
+            var passwordHasher = new PasswordHasher<User>(); 
+            var result = passwordHasher.VerifyHashedPassword(null, hashedPassword, providedPassword);
+            return result == PasswordVerificationResult.Success;
+        }
+
+        private string GenerateJwtToken(string username, string role)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, role)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1), // Token süresi
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
